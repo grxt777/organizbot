@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Telegram Bot Configuration
-BOT_TOKEN = "7728088084:AAHHm-uhMuSg1IWc4eiS8OAhZiF3eUEDA4E"
-CHAT_ID = -1001755175377
+BOT_TOKEN = os.getenv("BOT_TOKEN", "7728088084:AAHHm-uhMuSg1IWc4eiS8OAhZiF3eUEDA4E")
+CHAT_ID = int(os.getenv("CHAT_ID", "-1001755175377"))
 
 # Event Configuration
 MAX_PARTICIPANTS = 18
