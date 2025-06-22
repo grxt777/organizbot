@@ -17,5 +17,9 @@ SCHEDULE_DAY = 6  # Sunday (0=Monday, 6=Sunday)
 PIN_MESSAGE = True  # Закреплять ли сообщение со списком
 PIN_NOTIFICATION = False  # Показывать ли уведомление о закреплении
 
+# Keep Alive Configuration
+KEEP_ALIVE = True  # Включить пинг каждую минуту для поддержания соединения
+PING_INTERVAL = 60  # Интервал пинга в секундах (60 = 1 минута)
+
 # Database Configuration
 DATABASE_PATH = "participants.db"  

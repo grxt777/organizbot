@@ -106,6 +106,16 @@ async def send_weekly_list():
     except Exception as e:
         logger.error(f"Error sending weekly list: {e}")
 
+async def keep_alive_ping():
+    """Пинг для поддержания соединения с Telegram API"""
+    try:
+        # Простой запрос для поддержания активности
+        bot_info = await bot.get_me()
+        logger.debug(f"Keep-alive ping successful - Bot: @{bot_info.username}")
+    except Exception as e:
+        logger.warning(f"Keep-alive ping failed: {e}")
+        # Не критично, продолжаем работу
+
 @dp.callback_query(F.data.startswith("join:"))
 async def handle_join(callback: CallbackQuery):
     """Обработка записи на участие"""
@@ -261,6 +271,38 @@ async def cmd_test(message: types.Message):
             f"Для тестирования используйте бота в чате {config.CHAT_ID}"
         )
 
+@dp.message(Command("status"))
+async def cmd_status(message: types.Message):
+    """Показать статус бота"""
+    try:
+        bot_info = await bot.get_me()
+        status_text = f"🤖 **Статус бота**\n\n"
+        status_text += f"👤 Имя: {bot_info.first_name}\n"
+        status_text += f"🆔 Username: @{bot_info.username}\n"
+        status_text += f"🆔 ID: `{bot_info.id}`\n\n"
+        status_text += f"💾 База данных: {'✅ Подключена' if db_manager else '❌ Ошибка'}\n"
+        status_text += f"⏰ Планировщик: {'✅ Работает' if scheduler.running else '❌ Остановлен'}\n"
+        status_text += f"🔄 Keep-alive: {'✅ Включен' if config.KEEP_ALIVE else '❌ Отключен'}\n"
+        
+        if config.KEEP_ALIVE:
+            status_text += f"⚡ Пинг каждые: {config.PING_INTERVAL} сек\n"
+        
+        status_text += f"\n📅 Следующая отправка: Воскресенье, {config.SCHEDULE_HOUR}:00"
+        
+        await message.answer(status_text, parse_mode="Markdown")
+        
+    except Exception as e:
+        await message.answer(f"❌ Ошибка получения статуса: {e}")
+
+@dp.message(Command("ping"))  
+async def cmd_ping(message: types.Message):
+    """Ручной пинг для проверки связи"""
+    try:
+        await keep_alive_ping()
+        await message.answer("🏓 Pong! Бот активен и работает!")
+    except Exception as e:
+        await message.answer(f"❌ Ошибка пинга: {e}")
+
 async def main():
     """Главная функция"""
     # Инициализация базы данных
@@ -277,6 +319,17 @@ async def main():
         id="weekly_list",
         replace_existing=True
     )
+    
+    # Добавляем пинг для поддержания соединения
+    if config.KEEP_ALIVE:
+        scheduler.add_job(
+            keep_alive_ping,
+            "interval",
+            seconds=config.PING_INTERVAL,
+            id="keep_alive",
+            replace_existing=True
+        )
+        logger.info(f"Keep-alive ping enabled (every {config.PING_INTERVAL}s)")
     
     scheduler.start()
     logger.info("Scheduler started")
