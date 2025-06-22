@@ -10,7 +10,7 @@ CHAT_ID = int(os.getenv("CHAT_ID", "-1001755175377"))
 # Event Configuration
 MAX_PARTICIPANTS = 18
 SCHEDULE_HOUR = 21
-SCHEDULE_MINUTE = 0
+SCHEDULE_MINUTE = 2
 SCHEDULE_DAY = 6  # Sunday (0=Monday, 6=Sunday)
 
 # Message Configuration

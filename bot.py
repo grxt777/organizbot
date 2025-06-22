@@ -28,6 +28,15 @@ def get_next_sunday_date() -> str:
     next_sunday = today + timedelta(days=days_ahead)
     return next_sunday.strftime('%Y-%m-%d')
 
+def get_next_monday_date() -> str:
+    """Получение даты ближайшего понедельника"""
+    today = datetime.now()
+    days_ahead = 0 - today.weekday()  # 0 = понедельник
+    if days_ahead <= 0:  # Если сегодня понедельник или прошло
+        days_ahead += 7
+    next_monday = today + timedelta(days=days_ahead)
+    return next_monday.strftime('%Y-%m-%d')
+
 def format_participants_list(participants: list, event_date: str) -> str:
     """Форматирование списка участников"""
     header = f"📅 Список участников на {event_date}\n"
@@ -259,10 +268,42 @@ async def cmd_start(message: types.Message):
 
 @dp.message(Command("test"))
 async def cmd_test(message: types.Message):
-    """Тестовая команда для отправки списка"""
+    """Тестовая команда для отправки списка на понедельник"""
     if message.chat.id == config.CHAT_ID:
-        await send_weekly_list()
-        await message.answer("✅ Тестовый список отправлен!")
+        try:
+            # Используем дату понедельника для тестового списка
+            event_date = get_next_monday_date()
+            
+            # Форматируем текст сообщения
+            text = format_participants_list([], event_date)
+            keyboard = get_participation_keyboard(event_date)
+            
+            # Отправляем сообщение
+            test_message = await message.answer(
+                text=text,
+                reply_markup=keyboard
+            )
+            
+            # Закрепляем сообщение, если включена эта опция
+            if config.PIN_MESSAGE:
+                try:
+                    await bot.pin_chat_message(
+                        chat_id=config.CHAT_ID,
+                        message_id=test_message.message_id,
+                        disable_notification=not config.PIN_NOTIFICATION
+                    )
+                    logger.info(f"Test message pinned for {event_date}")
+                except Exception as pin_error:
+                    logger.warning(f"Failed to pin test message: {pin_error}")
+            
+            # Сохраняем событие в базе данных
+            await db_manager.create_event(event_date, test_message.message_id)
+            
+            await message.answer("✅ Тестовый список на понедельник отправлен!")
+            
+        except Exception as e:
+            logger.error(f"Error sending test list: {e}")
+            await message.answer("❌ Ошибка при отправке тестового списка")
     else:
         await message.answer(
             f"❌ Команда работает только в настроенном чате!\n"
